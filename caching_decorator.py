@@ -10,12 +10,12 @@
 """
 
 
-def cache_decorator(max_size=100):
+def cache_decorator(max_size=5):
     def decorator(func):
         cache = {}
 
         def wrapper(*args, **kwargs):
-            key = args
+            key = args, tuple(kwargs.items())
 
             if key in cache:
                 return cache[key]
@@ -26,7 +26,7 @@ def cache_decorator(max_size=100):
                 if len(cache) > max_size:
                     first_key = next(iter(cache))
                     del cache[first_key]
-
+                print(cache)
                 return result
 
         return wrapper
@@ -34,6 +34,6 @@ def cache_decorator(max_size=100):
     return decorator
 
 
-@cache_decorator(max_size=100)
+@cache_decorator(max_size=2)
 def sum_func(a, b):
     return a + b
