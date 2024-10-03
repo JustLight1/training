@@ -15,6 +15,7 @@
 import asyncio
 import aiohttp
 import json
+from aiofiles import open as aio_open
 
 
 urls = [
@@ -23,16 +24,18 @@ urls = [
     'https://nonexistent.url'
 ]
 
+semaphore = asyncio.Semaphore(5)
+
 
 async def fetch_urls(urls: list[str], file_path: str):
-    connector = aiohttp.TCPConnector(limit=5)
-    async with aiohttp.ClientSession(connector=connector) as session:
-        tasks = [load_to_json(session, url, file_path) for url in urls]
-        await asyncio.gather(*tasks, return_exceptions=True)
+    async with semaphore:
+        async with aiohttp.ClientSession() as session:
+            tasks = [load_to_json(session, url, file_path) for url in urls]
+            await asyncio.gather(*tasks, return_exceptions=True)
 
 
 async def load_to_json(session, url: str, file_path: str):
-    with open(file_path, 'a') as file:
+    async with aio_open(file_path, 'a') as file:
         try:
             async with session.get(url, timeout=5) as response:
                 status_code = response.status
@@ -47,8 +50,7 @@ async def load_to_json(session, url: str, file_path: str):
             print(f'Непредвиденная ошибка при запросе {url}: {e}')
             result = {'url': url, 'status_code': -1}
 
-        json.dump(result, file)
-        file.write('\n')
+        await file.write(json.dumps(result) + '\n')
 
 if __name__ == '__main__':
     asyncio.run(fetch_urls(urls, './results.jsonl'))
