@@ -18,7 +18,7 @@ http://localhost:8000/USD должен возвращаться ответ ви�
 Данные, соотвественно, для доллара должны браться из
 https://api.exchangerate-api.com/v4/latest/USD
 """
-import requests
+import aiohttp
 import json
 
 
@@ -48,10 +48,15 @@ CURRENCIES = [
 async def get_currency(currency):
     try:
         url = API_URL + currency
-        response = requests.get(url)
-        return response.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    return None
     except Exception as e:
         print(e)
+        return None
 
 
 async def app(scope, receive, send):
@@ -74,6 +79,19 @@ async def app(scope, receive, send):
             await send({
                 'type': 'http.response.body',
                 'body': response_data,
+            })
+            return
+        else:
+            await send({
+                'type': 'http.response.start',
+                'status': 500,
+                'headers': [
+                    [b'content-type', b'text/plain'],
+                ],
+            })
+            await send({
+                'type': 'http.response.body',
+                'body': b'Internal Server Error',
             })
             return
     await send({
