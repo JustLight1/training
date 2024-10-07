@@ -1,5 +1,5 @@
 Function,Time (seconds)
-process_data_single_thread,0.0560
-process_data_parallel,0.0590
-process_data_multiprocessing,0.7370
-process_data_separate_processes,0.1490
+process_data_single_thread,5.9154
+process_data_parallel,7.2208
+process_data_multiprocessing,1.6304
+process_data_separate_processes,1.6720

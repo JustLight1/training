@@ -156,7 +156,7 @@ def save_results_to_csv(results, filename='./results.csv'):
 
 
 if __name__ == '__main__':
-    data = generate_data(500)
+    data = generate_data(50000)
     results = []
 
     result, func_name, time_taken = process_data_single_thread(data)
