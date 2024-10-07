@@ -46,54 +46,16 @@ CURRENCIES = [
 
 
 async def get_currency(currency):
-    try:
-        url = API_URL + currency
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    return await response.json()
-                else:
-                    return None
-    except Exception as e:
-        print(e)
-        return None
+    url = API_URL + currency
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                return None
 
 
-async def app(scope, receive, send):
-    assert scope['type'] == 'http'
-
-    path = scope['path']
-    currency = path[1:]
-    if str(currency).upper() in CURRENCIES:
-        response = await get_currency(currency)
-        if response:
-            response_data = json.dumps(response).encode('utf-8')
-
-            await send({
-                'type': 'http.response.start',
-                'status': 200,
-                'headers': [
-                    [b'content-type', b'application/json'],
-                ],
-            })
-            await send({
-                'type': 'http.response.body',
-                'body': response_data,
-            })
-            return
-        else:
-            await send({
-                'type': 'http.response.start',
-                'status': 500,
-                'headers': [
-                    [b'content-type', b'text/plain'],
-                ],
-            })
-            await send({
-                'type': 'http.response.body',
-                'body': b'Internal Server Error',
-            })
-            return
+async def return_404(send):
     await send({
         'type': 'http.response.start',
         'status': 404,
@@ -105,3 +67,50 @@ async def app(scope, receive, send):
         'type': 'http.response.body',
         'body': b'Currency not found',
     })
+
+
+async def return_500(send):
+    await send({
+        'type': 'http.response.start',
+        'status': 500,
+        'headers': [
+            [b'content-type', b'text/plain'],
+        ],
+    })
+    await send({
+        'type': 'http.response.body',
+        'body': b'Internal Server Error',
+    })
+
+
+async def return_json(send, data):
+    await send({
+        'type': 'http.response.start',
+        'status': 200,
+        'headers': [
+            [b'content-type', b'application/json'],
+        ],
+    })
+    await send({
+        'type': 'http.response.body',
+        'body': data,
+    })
+
+
+async def app(scope, receive, send):
+    assert scope['type'] == 'http'
+
+    path = scope['path']
+    currency = str(path[1:]).upper()
+
+    if currency not in CURRENCIES:
+        await return_404(send)
+        return
+
+    try:
+        response = await get_currency(currency)
+    except Exception:
+        await return_500(send)
+    else:
+        response_data = json.dumps(response).encode('utf-8')
+        await return_json(send, response_data)
