@@ -27,14 +27,12 @@ def single(max_processing_time: datetime.timedelta):
             lock_key = f'lock:{func.__name__}'
             lock = redis_client.lock(
                 lock_key, timeout=max_processing_time.total_seconds())
-            try:
-                acquired = lock.acquire(blocking=False)
-                if not acquired:
+            with lock:
+                if not lock.acquire(blocking=False):
                     raise LockError(
                         f'Функция {func.__name__} уже выполняется!')
                 return func(*args, **kwargs)
-            finally:
-                lock.release()
+
         return wrapper
 
     return decorator
