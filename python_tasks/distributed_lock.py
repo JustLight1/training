@@ -13,7 +13,6 @@ import time
 from functools import wraps
 
 import redis
-from redis.exceptions import LockError
 
 
 redis_client = redis.StrictRedis(host='localhost', port=6379)
@@ -25,12 +24,10 @@ def single(max_processing_time: datetime.timedelta):
         @wraps(func)
         def wrapper(*args, **kwargs):
             lock_key = f'lock:{func.__name__}'
-            lock = redis_client.lock(
-                lock_key, timeout=max_processing_time.total_seconds())
-            with lock:
-                if not lock.acquire(blocking=False):
-                    raise LockError(
-                        f'Функция {func.__name__} уже выполняется!')
+            with redis_client.lock(
+                lock_key, timeout=max_processing_time.total_seconds(),
+                blocking=False
+            ):
                 return func(*args, **kwargs)
 
         return wrapper
@@ -38,6 +35,6 @@ def single(max_processing_time: datetime.timedelta):
     return decorator
 
 
-@single(max_processing_time=datetime.timedelta(minutes=2))
+@single(max_processing_time=datetime.timedelta(minutes=1))
 def process_transaction():
     time.sleep(2)
