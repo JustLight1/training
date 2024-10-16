@@ -9,7 +9,8 @@ def fetch_task(worker_id):
     with transaction.atomic():
         stale_time = timezone.now() - timezone.timedelta(minutes=5)
         task = Task.objects.select_for_update(skip_locked=True).filter(
-            Q(status='processing', updated_at__lt=stale_time) | Q(status='pending')
+            Q(status='processing',
+              updated_at__lt=stale_time) | Q(status='pending')
         ).order_by('created_at').first()
 
         if task:
