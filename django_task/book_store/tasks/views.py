@@ -32,5 +32,6 @@ def fetch_task(worker_id):
 def complete_task(task_id):
     with transaction.atomic():
         task = Task.objects.select_for_update().get(id=task_id)
-        task.status = 'completed'
-        task.save()
+        if task.status == 'processing':
+            task.status = 'completed'
+            task.save()
