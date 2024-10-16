@@ -8,9 +8,9 @@ import redis
 
 class RedisQueue:
     def __init__(
-            self, queue_name='redis_queue', host='localhost', port='6379'
+            self, redis_client: redis.Redis, queue_name='redis_queue'
     ):
-        self.redis_client = redis.Redis(host=host, port=port)
+        self.redis_client = redis_client
         self.queue_name = queue_name
 
     def publish(self, msg: dict):
@@ -27,7 +27,8 @@ class RedisQueue:
 
 
 if __name__ == '__main__':
-    q = RedisQueue()
+    redis_client = redis.Redis(host='localhost', port=6379)
+    q = RedisQueue(redis_client)
     q.publish({'a': 1})
     q.publish({'b': 2})
     q.publish({'c': 3})
